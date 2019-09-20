@@ -38,18 +38,26 @@ my_int = []
 
 for z in z_range:
     quad_int = np.append(quad_int,integrate.quad(electric_field,-1,1,args=(z))[0])
-    my_int = np.append(my_int,my_integrate(electric_field,-1,1,electric_field(-1,z),electric_field(1,z),electric_field(0,z),1e-3,z)[0])
+    try:
+        my_int = np.append(my_int,my_integrate(electric_field,-1,1,electric_field(-1,z),electric_field(1,z),electric_field(0,z),1e-3,z)[0])
+    except:
+        print('My integrator could not evaluate for z=',z,' (here, R=1) so the value of the integral was set to 0')
+        my_int = np.append(my_int,0)
 
 plt.figure()
 plt.plot(z_range, quad_int)
+plt.xlabel('z distance from origin (R=1)')
+plt.ylabel('Electric Field')
+plt.title('Electric field found using quad')
 plt.savefig('quad_integral.pdf')
 
 plt.figure()
 plt.plot(z_range, my_int)
+plt.xlabel('z distance from origin (R=1)')
+plt.ylabel('Electric Field')
+plt.title('Electric field found using my integrgator and error handling')
 plt.savefig('my_integral.pdf')
 
-#This code will crash as it is, because my integrator cannot handle the singularity at z=1 (corresponding to z=R)
+#This code throws an error for z=1, because my integrator cannot handle the singularity there (corresponding to z=R)
 #Quad does not care about the singularity and produces the plot quad_integral.pdf even if one of my z is R.
-#To see quad produce results, you can comment out lines 47 to 49 and line 41.
-#If the value z=R is not included in the range (for instance by replacing the 101 at line 35 by 150), then
-#my integrator does work and produces the plot my_integral.pdf
+#Results from my integrator (with the integral at z=1) is plotted in my_integral.pdf
