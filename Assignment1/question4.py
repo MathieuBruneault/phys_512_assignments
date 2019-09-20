@@ -60,4 +60,4 @@ plt.savefig('my_integral.pdf')
 
 #This code throws an error for z=1, because my integrator cannot handle the singularity there (corresponding to z=R)
 #Quad does not care about the singularity and produces the plot quad_integral.pdf even if one of my z is R.
-#Results from my integrator (with the integral at z=1) is plotted in my_integral.pdf
+#Results from my integrator (with the integral at z=1) are plotted in my_integral.pdf

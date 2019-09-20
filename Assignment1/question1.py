@@ -39,6 +39,7 @@ fun2_err = []
 for delta in fun2_x:
     fun2_err = np.append(fun2_err, find_error(fun2, first_deriv_fun2, delta))
 
+#Make a plot of err vs delta for both functions
 plt.figure()
 plt.plot(fun1_x, fun1_err)
 plt.plot([fun1_del, fun1_del], [0,np.amax(fun1_err)], 'k', label='Ideal Delta')
@@ -59,4 +60,4 @@ plt.yscale('log')
 plt.legend(loc='upper right')
 plt.savefig('error_analysis_fun2.pdf')
 
-#From the two plots produced, we can see that the ideal edlta more or less aligns with the minimum in error
+#From the two plots produced, we can see that the ideal delta more or less aligns with the minimum in error

@@ -23,7 +23,7 @@ def interpolate(interp_voltage):
     spl = splrep(new_volt_data[::-1], new_temp_data[::-1])
     err_temperature = splev(closest_voltage, spl)
 
-    #Estimate the error as being the actual error from that second interpolation
+    #Estimate the error in the first interpolation as being the actual error in that second interpolation
     err = np.abs(actual_temp - err_temperature)
 
     return output_temperature, err
