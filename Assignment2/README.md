@@ -63,7 +63,7 @@ following errors:
 This seems reasonable, the errors on t0 and C are small compared to their associated parameters because they are 
 more well constrained, while tau and A aren't as well constrained, so they have slightly bigger % error.
 
-##Question 2 d)
+## Question 2 d)
 
 In the way I model my errors, I assume gaussian noise. Looking at the full span of data, there is clearly some
 correlated noise, which has not been taken into consideration in this model. Hence, I would not ttrust these
