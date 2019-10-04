@@ -53,6 +53,12 @@ def findError(t,y,p):
 
 
 data=np.loadtxt('229614158_PDCSAP_SC6.txt',delimiter=',')
+plt.figure()
+plt.plot(data[:,0],data[:,1])
+plt.title('Full data')
+plt.ylabel('Flux')
+plt.xlabel('Time')
+plt.savefig('question2_full_data')
 #We want to fit to the highest peak so we start at the point of highest flux
 idx_max=np.argmax(data[:,1])
 t=data[:,0][idx_max:idx_max+50]
