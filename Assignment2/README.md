@@ -1,6 +1,6 @@
 # Assignment 2
 
-This readme will answer the questions asek in assignment 2
+This readme will answer the questions asked in assignment 2
 
 ## Question 1 a)
 
@@ -66,5 +66,5 @@ more well constrained, while tau and A aren't as well constrained, so they have 
 ## Question 2 d)
 
 In the way I model my errors, I assume gaussian noise. Looking at the full span of data, there is clearly some
-correlated noise, which has not been taken into consideration in this model. Hence, I would not ttrust these
+correlated noise, which has not been taken into consideration in this model. Hence, I would not trust these
 errors too much.
