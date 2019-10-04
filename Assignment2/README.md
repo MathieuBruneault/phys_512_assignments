@@ -1,6 +1,6 @@
 # Assignment 2
 
-This readme will answer the questions
+This readme will answer the questions asek in assignment 2
 
 ## Question 1 a)
 
