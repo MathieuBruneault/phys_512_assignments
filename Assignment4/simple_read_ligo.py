@@ -3,6 +3,7 @@ from matplotlib import pyplot as plt
 import h5py
 import glob
 import matplotlib.mlab as mlab
+from scipy.ndimage import gaussian_filter
 
 def read_template(filename):
     dataFile=h5py.File(filename,'r')
@@ -10,6 +11,7 @@ def read_template(filename):
     th=template[0]
     tl=template[1]
     return th,tl
+
 def read_file(filename):
     dataFile=h5py.File(filename,'r')
     dqInfo = dataFile['quality']['simple']
@@ -22,28 +24,6 @@ def read_file(filename):
     dt=(1.0*duration)/len(strain)
     dataFile.close()
     return strain,dt,utc
-def get_fft_vec(n):
-    vec=np.arange(n)
-    vec[vec>n/2]=vec[vec>n/2]-n
-    return vec
-def smooth_map(map,npix,smooth=True):
-    nx=len(map)
-    xind=get_fft_vec(nx)
-
-    #make a 1-d gaussians of the correct length
-    sig=npix/np.sqrt(8*np.log(2))
-    xvec=np.exp(-0.5*xind**2/sig**2)/np.sqrt(2*np.pi*sig**2)  
-    xvec=xvec/xvec.sum()
-
-    #if we didn't mess up, the kernel FT should be strictly real
-    kernel=np.real(np.fft.rfft(xvec))
-    
-    #get the map Fourier transform
-    mapft=np.fft.rfft(map)
-    #Multiply it by kerel to smooth
-    mapft=mapft*kernel
-
-    return mapft
 
 def noise_model(fname):
     strain,dt,utc=read_file(fname)
@@ -52,28 +32,30 @@ def noise_model(fname):
     window=0.5*(1+np.cos(x*np.pi/np.max(x)))
     windowed_strain=window*strain
     normfac=np.sqrt(np.mean(window**2))
-    power_spectrum=(np.abs(smooth_map(windowed_strain,1)/normfac)**2)
-    power_spectrum=power_spectrum[5000:]
-    power_spectrum=power_spectrum[:-15000]
-    plt.figure()
-    plt.plot(power_spectrum)
-    plt.yscale('log')
-    plt.xscale('log')
-    plt.show()
+    power_spectrum=np.abs(np.fft.rfft(windowed_strain)/normfac)**2
+    power_spectrum=gaussian_filter(power_spectrum,3)
     return power_spectrum
 
 def find_wave(fname_H, fname_L, template_name):
     strain_H,dt,utc=read_file(fname_H)
     strain_L,dt,utc=read_file(fname_L)
     template_H,template_L=read_template(template_name)
-    noise_H=np.fft.fftshift(np.fft.irfft(noise_model(fname_H)))
-    noise_L=np.fft.fftshift(np.fft.irfft(noise_model(fname_L)))
-    whitened_strain_H=((noise_H)**(-1/2))*strain_H
-    whitened_strain_L=((noise_L)**(-1/2))*strain_L
-    whitened_template_H=((noise_H)**(-1/2))*template_H
-    whitened_template_L=(noise_L)**(-1/2)*template_L
+    noise_H=noise_model(fname_H)
+    noise_L=noise_model(fname_L)
+    x=np.arange(len(strain_H))
+    x=x-1.0*x.mean()
+    window=0.5*(1+np.cos(x*np.pi/np.max(x)))
+    normfac=np.sqrt(np.mean(window**2))
+    whitened_A_H=np.fft.rfft(window*template_H)/(np.sqrt(noise_H)*normfac)
+    whitened_A_L=np.fft.rfft(window*template_L)/(np.sqrt(noise_L)*normfac)
+    whitened_d_H=np.fft.rfft(window*strain_H)/(np.sqrt(noise_H)*normfac)
+    whitened_d_L=np.fft.rfft(window*strain_L)/(np.sqrt(noise_L)*normfac)
+    m_H=np.fft.fftshift(np.fft.irfft(np.conj(whitened_A_H)*whitened_d_H))
+    m_L=np.fft.fftshift(np.fft.irfft(np.conj(whitened_A_L)*whitened_d_L))
+    SNR_H=np.abs(m_H*np.fft.fftshift(np.fft.irfft(np.sqrt(np.conj(whitened_A_H)*whitened_A_H))))
+    SNR_L=np.abs(m_H*np.fft.fftshift(np.fft.irfft(np.sqrt(np.conj(whitened_A_L)*whitened_A_L))))
     plt.figure()
-    plt.plot(whitened_template_H)
+    plt.plot(SNR_L)
     plt.show()
 
 
