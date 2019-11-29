@@ -116,7 +116,7 @@ bc[circle_indices]=1
 mask[circle_indices]=1
 
 
-npass=5
+npass=4
 #loop through the resolutions.  In this case, start with something 2**5 times coarser than the desired resolution
 #solve it, and then increase the resolution by a factor of 2.  Solve the next-higher resolution problem using that
 #as the starting guess.
@@ -157,14 +157,23 @@ time_2=time.time()
 print('This entire process took ', time_2-time_1, 's')
 
 Ey, Ex = np.gradient(all_x[0])
+E_center=Ey[npix//2,:]**2+Ex[npix//2,:]**2
 
-#Finally, plot the final map with boundary conditions enforced as well as charge density and electric field
+#Finally, plot the final V with boundary conditions enforced as well as charge density and electric field
 plt.figure()
+plt.streamplot(np.arange(0,npix), np.arange(0,npix), -Ex, -Ey, density=2)
 plt.imshow(all_x[0])
 plt.colorbar()
-plt.streamplot(np.arange(0,npix), np.arange(0,npix), Ex, Ey)
-plt.savefig('q4_final_V.pdf')
+plt.title('Numerical V and the arrows for E')
+plt.savefig('q4_final_V_and_E.pdf')
 plt.figure()
 plt.imshow(rho)
 plt.colorbar()
+plt.title('Final charge distribution')
 plt.savefig('q4_final_rho.pdf')
+plt.figure()
+plt.plot(np.arange(0,npix), E_center)
+plt.title('Strength of the E field across a cross-section taken at x at the midddle')
+plt.ylabel('E')
+plt.xlabel('y')
+plt.savefig('q4_E_field_strength_middle_cross_section')
