@@ -8,7 +8,7 @@ import argparse
 from matplotlib  import pyplot as plt
 
 class particles:
-    def __init__(self,m=1.0,npart=1000,ngrid=100,soft=0.01,G=1.0,dt=0.1,size=5):
+    def __init__(self,m=1.0,npart=1000,ngrid=100,soft=2,G=1.0,dt=0.1,size=5,BC='p',part=1):
         self.opts={}
         self.opts['soft']=soft
         self.opts['n']=npart
@@ -25,6 +25,29 @@ class particles:
         self.vx=0*self.x
         self.vy=self.vx.copy()
         self.density_grid=np.zeros((ngrid,ngrid))
+        self.BC=BC
+
+        if part == 2:
+            self.x[0] = 2*size/6
+            self.x[1] = 4*size/6
+            self.y[0] = size/2
+            self.y[1] = size/2
+            self.vx[0] = 0
+            self.vx[1] = 0
+            self.vy[0] = 1.25
+            self.vy[1] = -1.25
+
+        x_grid = np.linspace(0, self.xlim[1], num=ngrid)
+        y_grid = np.linspace(0, self.ylim[1], num=ngrid)
+        green_fct = np.zeros((ngrid,ngrid))
+        #r=np.sqrt((np.array([x_grid,]*ngrid)-x_grid[ngrid//2])**2+(np.array([y_grid,]*ngrid).transpose()-y_grid[ngrid//2])**2)
+        r=np.sqrt((np.array([x_grid,]*ngrid))**2+(np.array([y_grid,]*ngrid).transpose())**2)
+        green_fct = 1/(4*np.pi*r)
+        green_fct[r < self.opts['soft']] = 1/(4*np.pi*self.opts['soft'])
+        #green_fct += 1/(4*np.pi*self.opts['soft'])
+        green_fct += np.flip(green_fct,1)
+        green_fct += np.flip(green_fct,0)
+        self.green_fct = green_fct
 
     def get_density(self):
         grid = np.zeros((self.opts['ngrid'],self.opts['ngrid']))
@@ -41,19 +64,13 @@ class particles:
     def get_forces(self):
         self.fx=np.zeros(self.opts['n'])
         self.fy=0*self.fx
-        pot=0
         x_idx, y_idx = part.get_density()
-        n=self.opts['ngrid']
-        x_grid = np.linspace(0, self.xlim[1], num=n)
-        y_grid = np.linspace(0, self.ylim[1], num=n)
-        green_fct = np.zeros((n,n))
-        r=np.sqrt((np.array([x_grid,]*n)-x_grid[n//2])**2+(np.array([y_grid,]*n).transpose()-y_grid[n//2])**2)
-        green_fct = 1/(4*np.pi*r)
-        green_fct[r < self.opts['soft']] = 0
-        green_fct += self.opts['soft']
-        pot = np.fft.ifft2(np.fft.fft2(self.density_grid)*np.fft.fft2(green_fct)).real
-        fx = -0.5*(np.roll(pot, 1, axis = 1) - np.roll(pot, -1, axis=1))*self.density_grid*(x_grid[1]-x_grid[0])
-        fy = -0.5*(np.roll(pot, 1, axis = 0) - np.roll(pot, -1, axis=0))*self.density_grid*(x_grid[1]-x_grid[0])
+        pot = np.fft.ifft2(np.fft.fft2(self.density_grid)*np.fft.fft2(self.green_fct)).real
+        pot=0.5*(np.roll(pot, 1, axis=1) + pot)
+        pot=0.5*(np.roll(pot, 1, axis=0) + pot)
+        if self.BC == 'p':
+            fy = -0.5*(np.roll(pot, 1, axis = 1) - np.roll(pot, -1, axis=1))*self.density_grid*(self.xlim[1]/self.opts['ngrid'])
+            fx = -0.5*(np.roll(pot, 1, axis = 0) - np.roll(pot, -1, axis=0))*self.density_grid*(self.ylim[1]/self.opts['ngrid'])
         for (i,j) in enumerate(x_idx):
             self.fx[i] = fx[j][y_idx[i]]
             self.fy[i] = fy[j][y_idx[i]]
@@ -61,9 +78,10 @@ class particles:
 
     def evolve(self):
         self.x+=self.vx*self.opts['dt']
-        self.x = self.x%(self.xlim[1])
         self.y+=self.vy*self.opts['dt']
-        self.y = self.y%(self.ylim[1])
+        if self.BC == 'p':
+            self.x = self.x%(self.xlim[1])
+            self.y = self.y%(self.ylim[1])
         pot=self.get_forces()
         self.vx+=self.fx*self.opts['dt']
         self.vy+=self.fy*self.opts['dt']
@@ -93,18 +111,47 @@ if __name__=='__main__':
     arg_parser = argparse.ArgumentParser(
         description="Numerically solve the n-body problem"
     )
-    arg_parser.add_argument("part_number", help="Which part should be executed", type=int)
-    arg_parser.add_argument("-BC", help="Boundary conditions to use. Accepted values are p (periodic) and np (non periodic)", type=str)
+    arg_parser.add_argument("part_number", help="Which part should be executed (1, 2, 3 or 4 are accepted)", type=int)
+    arg_parser.add_argument("-BC", help="Boundary conditions to use. Accepted values are p (periodic) and np (non periodic). Assumes periodic BC if none is given", type=str, default='p')
     args = arg_parser.parse_args()
-    print(args.BC)
-    n=100000
-    ngrid=512
-    part=particles(m=1.0/n,npart=n,ngrid=ngrid,dt=1)
+    if args.BC == 'p' or args.BC == 'np':
+        BC = args.BC
+    else:
+        print('Not a valid boundary condition, use -h for more information')
+        exit()
+    if args.part_number == 1:
+        n=1
+        ngrid=50
+        m=1.0/n
+        dt=1
+        soft=1
+    elif args.part_number == 2:
+        n=2
+        ngrid=100
+        m=1.0/n
+        dt=0.05
+        soft=1
+    elif args.part_number == 3:
+        n=100000
+        ngrid=512
+        m=1.0/n
+        dt=5
+        soft=2
+    else:
+        print('Not a valid part number, use -h for more information')
+        exit()
+
+    part=particles(m=m,npart=n,ngrid=ngrid,dt=dt,soft=soft,BC=BC,part=args.part_number)
 
     for i in range(0,10000):
         energy=part.evolve()
         print('Energy is ', energy)
         plt.clf()
-        plt.imshow(part.density_grid)
-        plt.colorbar()
+        if args.part_number == 1 or args.part_number == 2:
+            plt.scatter(part.x,part.y)
+            plt.ylim([0,5])
+            plt.xlim([0,5])
+        else:
+            plt.pcolormesh(part.density_grid)
+            plt.colorbar()
         plt.pause(1e-3)
