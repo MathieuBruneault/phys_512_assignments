@@ -34,8 +34,8 @@ class particles:
             self.y[1] = size/2
             self.vx[0] = 0
             self.vx[1] = 0
-            self.vy[0] = 1.25
-            self.vy[1] = -1.25
+            self.vy[0] = 1
+            self.vy[1] = -1
 
         x_grid = np.linspace(0, self.xlim[1], num=ngrid)
         y_grid = np.linspace(0, self.ylim[1], num=ngrid)
@@ -129,12 +129,12 @@ if __name__=='__main__':
         n=2
         ngrid=100
         m=1.0/n
-        dt=0.05
+        dt=0.03
         soft=1
     elif args.part_number == 3:
         n=100000
         ngrid=512
-        m=1.0/n
+        m=1/n
         dt=5
         soft=2
     else:
@@ -151,7 +151,13 @@ if __name__=='__main__':
             plt.scatter(part.x,part.y)
             plt.ylim([0,5])
             plt.xlim([0,5])
+            plt.title('Part ' + str(args.part_number) + ' with ' + str(BC) + 'eriodic boundary conditions')
+            plt.xlabel('x')
+            plt.ylabel('y')
         else:
             plt.pcolormesh(part.density_grid)
             plt.colorbar()
+            plt.title('Part ' + str(args.part_number) + ' with ' + str(BC) + 'eriodic boundary conditions')
+            plt.xlabel('x')
+            plt.ylabel('y')
         plt.pause(1e-3)
