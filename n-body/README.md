@@ -31,7 +31,7 @@ In both of these parts, energy changes quite a bit, meaning that there is room f
 I think the density grid could be found much more accurately than with the lazy method I used, where I just find the closest
 grid cell to each mass. Interestingly, there is a spike in energy when the big cluster is formed in non-periodic BC.
 
-##Part 4
+## Part 4
 
 Here, some structure appears, but a lot of the masses are so small that they seem to not really feel the potentialm so they 
 essetially remain immobile during the entire simulation. Nonetheless, some clusters form, although they eventually breeak
