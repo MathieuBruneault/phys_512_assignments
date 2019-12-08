@@ -64,12 +64,10 @@ class particles:
             self.m=np.ones(self.opts['n'])*m
         else:
             self.m=[]
-            x_idx = [take_closest(x_grid,i) for i in self.x]
-            y_idx = [take_closest(y_grid,i) for i in self.y]
-            r=np.sqrt((np.array([x_grid,]*ngrid)-size/2)**2+(np.array([y_grid,]*ngrid).transpose()-size/2)**2)
-            for(i,j) in zip(x_idx,y_idx):
-                self.m=np.append(self.m,m/r[i][j]**3)
-            self.m[self.m > m/(self.opts['soft'])**3] = m/(self.opts['soft'])**3
+            x_fourier=np.real(np.fft.fftshift(self.x))
+            y_fourier=np.real(np.fft.fftshift(self.y))
+            for(i,j) in zip(x_fourier,y_fourier):
+                self.m=np.append(self.m,m/(i**2+j**2)**(3/2))
 
     def get_density(self):
         #Create a grid to discretize position
@@ -110,7 +108,7 @@ class particles:
         for (i,j) in enumerate(x_idx):
             self.fx[i] = fx[j][y_idx[i]]
             self.fy[i] = fy[j][y_idx[i]]
-        return -0.5*np.sum(pot)
+        return -0.5*np.sum(self.density_grid*pot)
 
     def evolve(self):
         #Evolve the positions base on previously calculated velocities
@@ -188,7 +186,7 @@ if __name__=='__main__':
         n=100000
         ngrid=512
         m=1/n
-        dt=0.001
+        dt=0.1
         soft=0.1
     else:
         print('Not a valid part number, use -h for more information')
@@ -219,7 +217,10 @@ if __name__=='__main__':
             y.append(part.y)
         else:
             #Plot the particle density if we are doing part 3 or 4
-            plt.pcolormesh(part.density_grid, norm=LogNorm())
+            if args.part_number == 4:
+                plt.imshow(part.density_grid,Norm=LogNorm())
+            else:
+                plt.imshow(part.density_grid)
             plt.colorbar()
             plt.title('Part ' + str(args.part_number) + ' with ' + str(BC) + 'eriodic boundary conditions')
             plt.xlabel('x')
@@ -240,7 +241,10 @@ if __name__=='__main__':
         anim.save('Part_'+str(args.part_number)+'_'+BC+'.mp4')
     else:
         fig,ax = plt.subplots(figsize=(8,6))
-        cax=ax.imshow(grid[0])
+        if args.part_number == 4:
+            cax=ax.imshow(grid[0],Norm=LogNorm())
+        else:
+            cax=ax.imshow(grid[0])
         ax.set_title('Part ' + str(args.part_number) + ' with ' + str(BC) + 'eriodic boundary conditions')
         ax.set_xlabel('x')
         ax.set_ylabel('y')
@@ -254,5 +258,5 @@ if __name__=='__main__':
     plt.xlabel('Iteration')
     plt.ylabel('Energy')
     plt.title('Part ' + str(args.part_number) + ' with ' + str(BC) + 'eriodic boundary conditions - Energy')
-    plt.ticklabel_format(useOffset=False, style='plain')
+    #plt.ticklabel_format(useOffset=False, style='plain')
     plt.savefig('Part_'+str(args.part_number)+'_'+BC+'_energy.pdf')
